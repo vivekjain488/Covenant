@@ -1,0 +1,7 @@
+0g-storage-node/
+axl/
+prompt.json
+.env
+.env.local
+.env.example
+.env.prod

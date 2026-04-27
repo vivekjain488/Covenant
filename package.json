@@ -1,0 +1,11 @@
+{
+  "name": "guardrail-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix client run build && npm --prefix contracts run compile && npm --prefix contracts run test",
+    "client:build": "npm --prefix client run build",
+    "contracts:compile": "npm --prefix contracts run compile",
+    "contracts:test": "npm --prefix contracts run test",
+    "server:start": "npm --prefix server start"
+  }
+}
