@@ -26,7 +26,7 @@ import {
 const metrics = [
   { label: "Policies Enforced", value: "128", delta: "+18 today", tone: "emerald" },
   { label: "Transactions Blocked", value: "37", delta: "5 injection attempts", tone: "rose" },
-  { label: "0G Logs Written", value: "94", delta: "append-only", tone: "cyan" },
+  { label: "Local DB Logs", value: "94", delta: "append-only", tone: "cyan" },
   { label: "Median Check Time", value: "82ms", delta: "p95 141ms", tone: "amber" },
 ];
 
@@ -57,7 +57,7 @@ const architecture = [
   },
   {
     step: "Layer 5",
-    title: "0G Memory",
+    title: "Local Logging",
     icon: Database,
     description: "Persist blocked activity and threat intelligence as immutable logs.",
   },
@@ -88,7 +88,7 @@ const capabilities = [
 
 const integrations = [
   "KeeperHub",
-  "0G",
+  "Local DB",
   "ENS",
   "Uniswap",
   "Gensyn AXL",
@@ -113,7 +113,7 @@ const baseEvents = [
   {
     type: "LOG",
     tone: "cyan",
-    message: "Violation appended to 0G storage with sanitized metadata and hash trail.",
+    message: "Violation appended to local storage with sanitized metadata and hash trail.",
     time: "12:41:29",
   },
   {
@@ -348,7 +348,7 @@ export default function App() {
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-zinc-400 md:text-xl">
                   GuardRail sits between autonomous agents and execution surfaces. It scores intent, applies policy trees,
-                  writes violations to 0G, and relays approved actions through KeeperHub.
+                  writes violations to a local JSON log, and relays approved actions through KeeperHub.
                 </p>
               </div>
 
@@ -375,7 +375,7 @@ export default function App() {
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                  0G audit sink online
+                  Local audit sink online
                 </span>
               </div>
             </div>
@@ -498,7 +498,7 @@ export default function App() {
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-5xl">Sponsor stack, stitched into one flow.</h2>
             </div>
             <p className="hidden max-w-lg text-sm leading-7 text-zinc-500 md:block">
-              The project is wired for KeeperHub execution, 0G persistence, ENS naming, Uniswap telemetry, and AXL threat
+              The project is wired for KeeperHub execution, local logging persistence, ENS naming, Uniswap telemetry, and AXL threat
               propagation.
             </p>
           </div>
@@ -598,7 +598,7 @@ export default function App() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
                   [BadgeCheck, "keeperhub", "approved relay"],
-                  [AlertTriangle, "0G", "violation sink"],
+                  [AlertTriangle, "Local DB", "violation sink"],
                   [ShieldAlert, "ens", "policy anchor"],
                   [Zap, "axl", "threat broadcast"],
                 ].map(([Icon, label, value]) => (
@@ -624,7 +624,7 @@ export default function App() {
                   Ship the firewall, then let agents move with policy-backed confidence.
                 </h2>
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-400 md:text-base">
-                  This prototype is set up to expand into live KeeperHub execution, ENS policy resolution, 0G logging, and
+                  This prototype is set up to expand into live KeeperHub execution, ENS policy resolution, local JSON logging, and
                   AXL broadcast workflows as the external keys are wired in.
                 </p>
               </div>
@@ -709,7 +709,7 @@ export default function App() {
             </div>
 
             <div className="border-t border-white/8 px-5 py-4 text-xs text-zinc-500">
-              Runtime note: live integrations will activate once the KeeperHub, 0G, ENS, and AXL environment variables are
+              Runtime note: live integrations will activate once the KeeperHub, Local DB, ENS, and AXL environment variables are
               supplied.
             </div>
           </Panel>

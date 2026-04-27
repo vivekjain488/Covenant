@@ -1,15 +1,19 @@
 require("dotenv").config();
 
-const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const keeperHubApiKey = process.env.KEEPERHUB_API_KEY || "";
 const uniswapApiKey = process.env.UNISWAP_API_KEY || "";
-const zeroGRpcUrl = process.env.ZERO_G_RPC_URL || "";
-const zeroGStorageNode = process.env.ZERO_G_STORAGE_NODE || "";
 const gensynAxlUrl = process.env.GENSYN_AXL_URL || "http://127.0.0.1:9002";
 const guardrailRegistryAddress = process.env.GUARDRAIL_REGISTRY_ADDRESS || "";
+
+const VIOLATIONS_FILE = path.join(__dirname, "violations.json");
+if (!fs.existsSync(VIOLATIONS_FILE)) {
+  fs.writeFileSync(VIOLATIONS_FILE, JSON.stringify([]));
+}
 
 app.use(express.json({ limit: "32kb" }));
 
@@ -63,9 +67,19 @@ const events = [
     type: "LOG",
     tone: "cyan",
     time: "12:41:29",
-    message: "Violation appended to 0G storage with sanitized metadata.",
+    message: "Violation appended to local storage JSON log with sanitized metadata.",
   },
 ];
+
+function persistToLocalLog(logEntry) {
+  try {
+    const data = JSON.parse(fs.readFileSync(VIOLATIONS_FILE, "utf-8"));
+    data.unshift(logEntry);
+    fs.writeFileSync(VIOLATIONS_FILE, JSON.stringify(data.slice(0, 500), null, 2));
+  } catch (err) {
+    console.error("Failed to write to local storage log", err);
+  }
+}
 
 function sanitizeText(value) {
   return String(value || "")
@@ -159,8 +173,7 @@ app.get("/api/config", (_, res) => {
     integrations: {
       keeperHubConfigured: Boolean(keeperHubApiKey),
       uniswapConfigured: Boolean(uniswapApiKey),
-      zeroGConfigured:
-        Boolean(zeroGRpcUrl) && Boolean(zeroGStorageNode) && !zeroGStorageNode.startsWith("your_"),
+      localStorageActive: true,
       gensynAxlUrl,
       guardrailRegistryAddress,
     },
@@ -222,6 +235,10 @@ app.post("/api/check", (req, res) => {
   };
 
   events.unshift(logEntry);
+  if (!decision.allowed) {
+    persistToLocalLog(logEntry);
+  }
+  
   if (events.length > 20) {
     events.pop();
   }
@@ -245,6 +262,8 @@ app.post("/api/events", (req, res) => {
   };
 
   events.unshift(event);
+  persistToLocalLog(event);
+  
   if (events.length > 20) {
     events.pop();
   }

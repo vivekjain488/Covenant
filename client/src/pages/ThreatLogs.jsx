@@ -39,7 +39,7 @@ export default function ThreatLogs() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle className="h-12 w-12 text-zinc-600 mb-4" />
         <h2 className="text-xl font-semibold text-white">Wallet not connected</h2>
-        <p className="text-zinc-400 mt-2 text-sm">Please connect your wallet to view your 0G violation logs.</p>
+        <p className="text-zinc-400 mt-2 text-sm">Please connect your wallet to view your local violation logs.</p>
       </div>
     );
   }
@@ -47,7 +47,7 @@ export default function ThreatLogs() {
   return (
     <div className="relative z-10 text-white max-w-5xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">0G Violation Logs</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Violation Logs</h1>
         <p className="mt-2 text-sm text-zinc-400">Layer 5: Immutable record of blocked transactions and injection patterns.</p>
       </div>
 
