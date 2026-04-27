@@ -62,21 +62,24 @@ export function WalletProvider({ children }) {
       return;
     }
 
-    const provider = new BrowserProvider(window.ethereum);
-    const accounts = await provider.send("eth_accounts", []);
-    const hexChain = await provider.send("eth_chainId", []);
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      const hexChain = await window.ethereum.request({ method: "eth_chainId" });
 
-    setChainId(hexChain);
+      setChainId(hexChain);
 
-    if (!accounts || accounts.length === 0) {
-      setAddress("");
-      setWorkspace(DEFAULT_WORKSPACE);
-      return;
+      if (!accounts || accounts.length === 0) {
+        setAddress("");
+        setWorkspace(DEFAULT_WORKSPACE);
+        return;
+      }
+
+      const currentAddress = accounts[0];
+      setAddress(currentAddress);
+      setWorkspace(readWorkspace(currentAddress));
+    } catch (e) {
+      console.error(e);
     }
-
-    const currentAddress = accounts[0];
-    setAddress(currentAddress);
-    setWorkspace(readWorkspace(currentAddress));
   }, []);
 
   const connectWallet = useCallback(async () => {
@@ -90,9 +93,15 @@ export function WalletProvider({ children }) {
     setIsConnecting(true);
 
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
-      const hexChain = await provider.send("eth_chainId", []);
+      // Force account selection popup instead of silently connecting
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }]
+      });
+
+      // Request strict accounts bypassing ethers caching
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const hexChain = await window.ethereum.request({ method: "eth_chainId" });
 
       if (!accounts || accounts.length === 0) {
         throw new Error("Wallet did not return an account.");
