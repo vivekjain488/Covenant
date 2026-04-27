@@ -1,63 +1,104 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "../context/WalletContext";
-import { Plus, CheckCircle2, Shield, Trash2, ArrowRight } from "lucide-react";
+import { fetchPolicies, createPolicy } from "../lib/api";
+import { Plus, CheckCircle2, Shield, Trash2, ArrowRight, XCircle, Loader2 } from "lucide-react";
 
 export default function Policies() {
-  const { isConnected, workspace, updateWorkspace } = useWallet();
+  const { isConnected, address, workspace, updateWorkspace } = useWallet();
+  const [serverPolicies, setServerPolicies] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newPolicyName, setNewPolicyName] = useState("");
+  const [limitUSD, setLimitUSD] = useState("500");
+  const [windowHours, setWindowHours] = useState("24");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadPolicies();
+  }, []);
+
+  const loadPolicies = async () => {
+    try {
+      const data = await fetchPolicies();
+      setServerPolicies(data.policies || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isConnected) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Shield className="h-12 w-12 text-zinc-600 mb-4" />
         <h2 className="text-xl font-semibold text-white">Wallet not connected</h2>
-        <p className="text-zinc-400 mt-2 text-sm">Please connect your wallet to view and edit your policies.</p>
+        <p className="text-zinc-400 mt-2 text-sm">Connect your wallet to create and manage firewall policies for your AI agents.</p>
       </div>
     );
   }
 
-  const policies = workspace?.personalPolicies || [];
-
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newPolicyName.trim()) return;
-    
-    updateWorkspace((draft) => ({
-      ...draft,
-      personalPolicies: [
-        ...draft.personalPolicies,
-        {
-          id: Date.now().toString(),
-          name: newPolicyName,
-          status: "active",
-          createdAt: new Date().toISOString(),
-          rules: [
-            { action: "swap", maxUSD: 500, perWindow: "1d", allowedProtocols: ["uniswap-v4"] }
-          ]
-        }
-      ]
-    }));
-    
-    setNewPolicyName("");
-    setIsCreating(false);
+    setSubmitting(true);
+    try {
+      const limitWei = (BigInt(Math.round(parseFloat(limitUSD))) * 10n ** 18n).toString();
+      const result = await createPolicy({
+        name: newPolicyName,
+        owner: address,
+        limitWei,
+        windowSeconds: parseInt(windowHours) * 3600,
+        tags: ["custom", "user-created"],
+      });
+
+      // Also save locally
+      updateWorkspace((draft) => ({
+        ...draft,
+        personalPolicies: [
+          ...draft.personalPolicies,
+          {
+            id: result.policy.id,
+            name: newPolicyName,
+            status: "active",
+            createdAt: new Date().toISOString(),
+            rules: [{ action: "any", maxUSD: parseInt(limitUSD), perWindow: `${windowHours}h` }],
+          },
+        ],
+      }));
+
+      await loadPolicies();
+      setNewPolicyName("");
+      setLimitUSD("500");
+      setWindowHours("24");
+      setIsCreating(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDeleteLocal = (id) => {
     updateWorkspace((draft) => ({
       ...draft,
-      personalPolicies: draft.personalPolicies.filter(p => p.id !== id)
+      personalPolicies: draft.personalPolicies.filter((p) => p.id !== id),
     }));
   };
+
+  const localPolicies = workspace?.personalPolicies || [];
+  const allPolicies = [...localPolicies, ...serverPolicies.filter((sp) => !localPolicies.some((lp) => lp.id === sp.id))];
 
   return (
     <div className="relative z-10 text-white max-w-5xl">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">On-Chain Policies</h1>
-          <p className="mt-2 text-sm text-zinc-400">Layer 1: View and manage ENS-registered JSON rule sets.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Agent Firewall Policies</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Define spending limits, token whitelists, and risk levels. Each policy guards one or more AI agents.
+          </p>
         </div>
         {!isCreating && (
-          <button 
+          <button
             onClick={() => setIsCreating(true)}
             className="flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition-transform hover:-translate-y-0.5"
           >
@@ -68,23 +109,50 @@ export default function Policies() {
       </div>
 
       {isCreating && (
-        <div className="mb-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 animate-in fade-in slide-in-from-top-4">
+        <div className="mb-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6">
           <h2 className="text-lg font-medium text-emerald-300 mb-4">New Policy Definition</h2>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="e.g. trading-bot-rules"
-              value={newPolicyName}
-              onChange={(e) => setNewPolicyName(e.target.value)}
-              className="flex-1 rounded-xl border border-emerald-500/20 bg-black/50 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50"
-            />
-            <button 
+          <div className="grid gap-4 sm:grid-cols-3 mb-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1 block">Policy Name</label>
+              <input
+                type="text"
+                placeholder="e.g. trading-bot-rules"
+                value={newPolicyName}
+                onChange={(e) => setNewPolicyName(e.target.value)}
+                className="w-full rounded-xl border border-emerald-500/20 bg-black/50 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1 block">Max Spend (USD)</label>
+              <input
+                type="number"
+                placeholder="500"
+                value={limitUSD}
+                onChange={(e) => setLimitUSD(e.target.value)}
+                className="w-full rounded-xl border border-emerald-500/20 bg-black/50 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1 block">Time Window (hours)</label>
+              <input
+                type="number"
+                placeholder="24"
+                value={windowHours}
+                onChange={(e) => setWindowHours(e.target.value)}
+                className="w-full rounded-xl border border-emerald-500/20 bg-black/50 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
               onClick={handleCreate}
-              className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors"
+              disabled={submitting}
+              className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-black hover:bg-emerald-400 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Deploy to Registry
             </button>
-            <button 
+            <button
               onClick={() => setIsCreating(false)}
               className="rounded-xl border border-white/10 px-6 py-2.5 text-sm font-medium hover:bg-white/5 transition-colors"
             >
@@ -94,11 +162,14 @@ export default function Policies() {
         </div>
       )}
 
-      {policies.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-black/35 p-10 flex flex-col items-center justify-center py-20 text-center">
+      {loading ? (
+        <div className="text-zinc-500 text-sm animate-pulse py-12 text-center">Loading policies from GuardRail API...</div>
+      ) : allPolicies.length === 0 ? (
+        <div className="rounded-2xl border border-white/8 bg-black/35 flex flex-col items-center justify-center py-20 text-center">
           <Shield className="h-10 w-10 text-zinc-600 mb-4" />
-          <p className="text-sm text-zinc-400 mb-4">No active policies found for this workspace.</p>
-          <button 
+          <p className="text-sm text-zinc-400 mb-2">No active policies defined yet.</p>
+          <p className="text-xs text-zinc-500 mb-4">Create your first policy to start protecting your AI agents.</p>
+          <button
             onClick={() => setIsCreating(true)}
             className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10 transition-colors"
           >
@@ -107,34 +178,51 @@ export default function Policies() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {policies.map(policy => (
-            <div key={policy.id} className="group flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-2xl border border-white/8 bg-black/35 p-6 transition-colors hover:border-white/15 hover:bg-white/[0.02]">
+          {allPolicies.map((policy) => (
+            <div
+              key={policy.id}
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-2xl border border-white/8 bg-black/35 p-6 transition-colors hover:border-white/15 hover:bg-white/[0.02]"
+            >
               <div>
                 <div className="flex items-center gap-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    {policy.enabled === false ? (
+                      <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    )}
                   </span>
                   <h3 className="text-base font-medium text-white">{policy.name}</h3>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {policy.rules.map((rule, idx) => (
-                    <span key={idx} className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] uppercase tracking-[0.05em] text-zinc-400 font-mono">
-                      {rule.action} / ${rule.maxUSD} / {rule.perWindow}
+                  {policy.rules
+                    ? policy.rules.map((rule, idx) => (
+                        <span key={idx} className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] uppercase tracking-[0.05em] text-zinc-400 font-mono">
+                          {rule.action} / ${rule.maxUSD} / {rule.perWindow}
+                        </span>
+                      ))
+                    : policy.limitWei && (
+                        <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] uppercase tracking-[0.05em] text-zinc-400 font-mono">
+                          limit: {(BigInt(policy.limitWei) / 10n ** 18n).toString()} ETH / {policy.windowSeconds}s
+                        </span>
+                      )}
+                  {policy.tags?.map((tag) => (
+                    <span key={tag} className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-cyan-400">
+                      {tag}
                     </span>
                   ))}
                 </div>
               </div>
               <div className="flex items-center gap-3 self-end sm:self-auto">
-                <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-2 text-xs font-medium text-white hover:bg-white/5 transition-colors">
-                  View Source <ArrowRight className="h-3 w-3" />
-                </button>
-                <button 
-                  onClick={() => handleDelete(policy.id)}
-                  className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500/20 transition-colors opacity-0 group-hover:opacity-100"
-                  aria-label="Delete policy"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {policy.rules && (
+                  <button
+                    onClick={() => handleDeleteLocal(policy.id)}
+                    className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-rose-400 hover:bg-rose-500/20 transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label="Delete policy"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

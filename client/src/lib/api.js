@@ -1,61 +1,39 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-const AXL_BASE_URL = import.meta.env.VITE_GENSYN_AXL_URL || "http://127.0.0.1:9002";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-async function fetchJson(url, options = {}, timeoutMs = 10000) {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`${response.status} ${response.statusText}: ${text}`);
-    }
-
-    return await response.json();
-  } finally {
-    window.clearTimeout(timer);
-  }
+export async function fetchState() {
+  const res = await fetch(`${API_BASE}/api/state`);
+  if (!res.ok) throw new Error("Failed to fetch state");
+  return res.json();
 }
 
-export function getApiBaseUrl() {
-  return API_BASE_URL;
-}
-
-export function getAxlBaseUrl() {
-  return AXL_BASE_URL;
-}
-
-export async function getApiState() {
-  return fetchJson(`${API_BASE_URL}/api/state`);
-}
-
-export async function getApiConfig() {
-  return fetchJson(`${API_BASE_URL}/api/config`);
+export async function fetchPolicies() {
+  const res = await fetch(`${API_BASE}/api/policies`);
+  if (!res.ok) throw new Error("Failed to fetch policies");
+  return res.json();
 }
 
 export async function createPolicy(policy) {
-  return fetchJson(`${API_BASE_URL}/api/policies`, {
+  const res = await fetch(`${API_BASE}/api/policies`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(policy),
   });
+  if (!res.ok) throw new Error("Failed to create policy");
+  return res.json();
 }
 
-export async function runPolicyCheck(payload) {
-  return fetchJson(`${API_BASE_URL}/api/check`, {
+export async function checkTransaction(transaction) {
+  const res = await fetch(`${API_BASE}/api/check`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(transaction),
   });
+  if (!res.ok) throw new Error("Failed to check transaction");
+  return res.json();
 }
 
-export async function getAxlTopology() {
-  return fetchJson(`${AXL_BASE_URL}/topology`);
+export async function fetchEvents() {
+  const res = await fetch(`${API_BASE}/api/events`);
+  if (!res.ok) throw new Error("Failed to fetch events");
+  return res.json();
 }
