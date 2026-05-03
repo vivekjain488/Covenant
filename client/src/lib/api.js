@@ -149,6 +149,15 @@ export async function getIntegrationsStatus() {
   return request("/api/integrations/status");
 }
 
+/** Does not throw on 503 — used by Integrations so red/green reflects `{ ok }` plus error text. */
 export async function probeUniswapTrading() {
-  return request("/api/integrations/uniswap/probe");
+  const res = await fetch(joinUrl("/api/integrations/uniswap/probe"), {
+    headers: withAuthHeaders({ "Content-Type": "application/json" }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return {
+    ok: Boolean(data?.ok),
+    error: typeof data?.error === "string" ? data.error : undefined,
+    summary: data?.summary ?? null,
+  };
 }

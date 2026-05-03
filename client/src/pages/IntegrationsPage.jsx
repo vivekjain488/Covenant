@@ -46,7 +46,7 @@ export default function IntegrationsPage() {
           }
         } catch {
           if (!cancelled) {
-            setUniswapProbe(null);
+            setUniswapProbe({ ok: false, error: "Could not reach Uniswap probe endpoint" });
           }
         }
       } catch (err) {
@@ -97,6 +97,19 @@ export default function IntegrationsPage() {
             Uniswap Trading API:{" "}
             <span className="text-zinc-400">{config?.integrations?.uniswapTradingBase || "—"}</span>
           </p>
+          {uniswapProbe?.ok === false && uniswapProbe?.error ? (
+            <p className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-xs text-rose-200/95">{uniswapProbe.error}</p>
+          ) : null}
+          {config?.integrations?.zeroGStorageReady === false && config?.integrations?.zeroGConfigured ? (
+            <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-100/85">
+              0G Storage SDK needs <code className="rounded bg-white/10 px-1">ZEROG_INDEXER_RPC</code>,{" "}
+              <code className="rounded bg-white/10 px-1">ZEROG_EVM_RPC_URL</code>, and{" "}
+              <code className="rounded bg-white/10 px-1">ZEROG_PRIVATE_KEY</code> in <strong className="text-zinc-300">server/.env</strong>
+              {" — "}
+              then restart Covenant API (<code className="rounded bg-white/10 px-1">npm run node</code> in <code className="rounded bg-white/10 px-1">server/</code>
+              ).
+            </p>
+          ) : null}
           <p className="text-xs text-zinc-500">Registry address: {config?.integrations?.covenantRegistryAddress || "not set"}</p>
         </article>
 
@@ -117,7 +130,19 @@ export default function IntegrationsPage() {
               <p>Peers discovered: {(topology.peers || []).length}</p>
             </div>
           ) : (
-            <p className="text-sm text-rose-200/90">{axlError || "Topology not loaded."}</p>
+            <div className="space-y-3">
+              <p className="text-sm text-rose-200/90">{axlError || "Topology not loaded."}</p>
+              {axlError && /127\.0\.0\.1|localhost/i.test(getAxlDisplayUrl(config) || "") ? (
+                <p className="text-xs leading-relaxed text-zinc-500">
+                  The browser only talks to Covenant; Covenant then calls <strong className="text-zinc-400">127.0.0.1:9002</strong>{" "}
+                  <em>on the server machine</em>. Start the{" "}
+                  <a href="https://github.com/gensyn-ai/axl" className="text-cyan-500/85 underline underline-offset-2 hover:text-cyan-400">
+                    Gensyn AXL
+                  </a>{" "}
+                  node there, or unset <code className="rounded bg-white/10 px-1">GENSYN_AXL_URL</code> until you need it.
+                </p>
+              ) : null}
+            </div>
           )}
         </article>
       </div>

@@ -1,6 +1,7 @@
 # --- Local clones / scratch (optional dev dependencies) ---
 0g-storage-node/
 axl/
+.tools/
 prompt.json
 
 # --- Secrets (committed templates use *.env.example only) ---
