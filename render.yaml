@@ -9,3 +9,13 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+
+  - type: web
+    name: covenant-axl-node
+    env: docker
+    dockerfilePath: axl/containerfiles/Dockerfile
+    dockerContext: axl
+    plan: free
+    envVars:
+      - key: PORT
+        value: 9002
