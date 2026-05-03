@@ -1,6 +1,6 @@
 # --- Local clones / scratch (optional dev dependencies) ---
 0g-storage-node/
-axl/
+
 .tools/
 prompt.json
 
