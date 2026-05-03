@@ -163,3 +163,31 @@ a {
     height: 70vw;
   }
 }
+
+/* Landing: animated circuit GIF layer (GPU hint) */
+.landing-circuit-gif {
+  will-change: transform, opacity;
+}
+
+/* Aceternity-style scales “arms” fade (Tailwind v3 has no mask-t-from-*); used by ScalesFramedBox */
+.landing-scales-arm-v {
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.landing-scales-arm-h {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
