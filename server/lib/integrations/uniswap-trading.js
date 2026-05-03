@@ -32,6 +32,25 @@ async function postQuote(apiKey, body, config = {}) {
     throw new Error("Set UNISWAP_ROUTER_VERSION (e.g. 2.0) on the server");
   }
 
+  const payload =
+    typeof body === "object" && body !== null && !Array.isArray(body)
+      ? { ...body }
+      : body;
+  for (const k of ["tokenInChainId", "tokenOutChainId"]) {
+    if (payload && typeof payload === "object" && k in payload) {
+      const v = payload[k];
+      const n =
+        typeof v === "number" && Number.isFinite(v)
+          ? Math.trunc(v)
+          : typeof v === "string" && /^[0-9]+$/.test(v.trim())
+            ? Number.parseInt(v.trim(), 10)
+            : NaN;
+      if (Number.isFinite(n)) {
+        payload[k] = n;
+      }
+    }
+  }
+
   const res = await fetch(`${base}/quote`, {
     method: "POST",
     headers: {
@@ -39,7 +58,7 @@ async function postQuote(apiKey, body, config = {}) {
       "x-api-key": apiKey,
       "x-universal-router-version": routerVersion,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -103,9 +122,17 @@ async function probeConnectivity(apiKey, config = {}) {
   const swapper = String(config.uniswapProbeSwapper || process.env.UNISWAP_PROBE_SWAPPER).trim();
   const tokenIn = String(config.uniswapProbeTokenIn || process.env.UNISWAP_PROBE_TOKEN_IN).trim();
   const tokenOut = String(config.uniswapProbeTokenOut || process.env.UNISWAP_PROBE_TOKEN_OUT).trim();
-  const tokenInChainId = String(config.uniswapProbeTokenInChainId || process.env.UNISWAP_PROBE_TOKEN_IN_CHAIN_ID).trim();
-  const tokenOutChainId = String(config.uniswapProbeTokenOutChainId || process.env.UNISWAP_PROBE_TOKEN_OUT_CHAIN_ID).trim();
+  const tokenInChainIdRaw = String(config.uniswapProbeTokenInChainId || process.env.UNISWAP_PROBE_TOKEN_IN_CHAIN_ID).trim();
+  const tokenOutChainIdRaw = String(config.uniswapProbeTokenOutChainId || process.env.UNISWAP_PROBE_TOKEN_OUT_CHAIN_ID).trim();
+  const tokenInChainId = Number.parseInt(tokenInChainIdRaw, 10);
+  const tokenOutChainId = Number.parseInt(tokenOutChainIdRaw, 10);
+  if (!Number.isFinite(tokenInChainId) || !Number.isFinite(tokenOutChainId)) {
+    throw new Error("UNISWAP_PROBE_TOKEN_IN_CHAIN_ID and UNISWAP_PROBE_TOKEN_OUT_CHAIN_ID must be integers");
+  }
   const amount = String(config.uniswapProbeAmount || process.env.UNISWAP_PROBE_AMOUNT).trim();
+  if (!/^[0-9]+$/.test(amount)) {
+    throw new Error("UNISWAP_PROBE_AMOUNT must be a positive integer string in token base units");
+  }
   const routingPreference = String(config.uniswapProbeRouting || process.env.UNISWAP_PROBE_ROUTING).trim();
   const slippage = Number(String(config.uniswapProbeSlippage ?? process.env.UNISWAP_PROBE_SLIPPAGE).trim());
   if (!Number.isFinite(slippage) || slippage < 0 || slippage > 50) {
@@ -122,6 +149,7 @@ async function probeConnectivity(apiKey, config = {}) {
     type: "EXACT_INPUT",
     slippageTolerance: slippage,
     routingPreference,
+    generatePermitAsTransaction: false,
   };
 
   const full = await postQuote(apiKey, body, config);

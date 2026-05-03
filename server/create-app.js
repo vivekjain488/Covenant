@@ -1,4 +1,7 @@
-require("dotenv").config();
+const path = require("path");
+
+// Resolve server/.env from this file so `node server/server.js` from repo root still loads the same vars.
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const express = require("express");
 const { createCovenantStore } = require("./lib/covenant-store");
