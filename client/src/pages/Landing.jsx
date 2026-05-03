@@ -5,6 +5,7 @@ import { ArrowRight, Shield } from "lucide-react";
 import { fetchState } from "@/lib/api";
 import { ArchitectureFlow } from "@/components/landing/ArchitectureFlow";
 import { FeatureDeck } from "@/components/landing/FeatureDeck";
+import { Navbar } from "@/components/landing/Navbar";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -233,6 +234,8 @@ export default function Landing() {
         </div>
       ) : null}
 
+      <Navbar />
+
       {/* Hero: circuit GIF + fade to pure black below — GIF does not extend past this section */}
       <section className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-black">
         <div className="pointer-events-none absolute inset-0 overflow-hidden bg-black">
@@ -305,11 +308,13 @@ export default function Landing() {
 
       <main className="relative bg-black">
         <div className="mx-auto w-[min(1120px,calc(100%-1.5rem))] space-y-0 px-4 pb-28 pt-4 md:px-6">
-          <section className="js-landing-architecture border-t border-white/[0.06] pt-20">
+          <section id="architecture" className="js-landing-architecture border-t border-white/[0.06] pt-20">
             <ArchitectureFlow />
           </section>
 
-          <FeatureDeck className="mt-28" />
+          <div id="features">
+            <FeatureDeck className="mt-28" />
+          </div>
 
           <section className="js-landing-metrics-row mt-28 border-y border-white/[0.07] py-16">
             <div className="flex flex-wrap items-center justify-center gap-y-12 gap-x-12 text-center md:gap-x-24">
