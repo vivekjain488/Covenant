@@ -27,7 +27,7 @@ COPY --from=builder /app/node-config.json .
 # Generate a new ephemeral node identity on boot if none exists
 RUN openssl genpkey -algorithm ed25519 -out private.pem
 
-EXPOSE 9002
+EXPOSE 10000
 
 ENTRYPOINT ["./node"]
 CMD ["-config", "node-config.json"]

@@ -81,6 +81,12 @@ func applyOverrides(base *ApiConfig, ov ApiConfig) {
 	if ov.ApiPort != 0 {
 		base.ApiPort = ov.ApiPort
 	}
+	// Let environment variable override the ApiPort for Render compatibility
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if fmt.Sscanf(envPort, "%d", &base.ApiPort) == 0 {
+			// fallback if scan fails
+		}
+	}
 	if ov.McpRouterPort != 0 {
 		base.McpRouterPort = ov.McpRouterPort
 	}
