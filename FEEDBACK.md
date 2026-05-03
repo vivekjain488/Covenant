@@ -1,4 +1,4 @@
-# GuardRail Feedback
+# Covenant Feedback
 
 ## KeeperHub
 - The registry and API expose a deterministic approval path that can be plugged into a relay pipeline.

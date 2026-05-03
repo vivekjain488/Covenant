@@ -6,15 +6,19 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
     "dev": "nodemon server.js",
-    "node": "node server.js"
+    "node": "node server.js",
+    "smoke": "node scripts/smoke.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.2.1",
+    "@0gfoundation/0g-ts-sdk": "^1.2.8",
     "dotenv": "^17.2.3",
-    "nodemon": "^3.1.11"
+    "ethers": "^6.13.1",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11",
+    "zod": "^4.4.1"
   }
 }

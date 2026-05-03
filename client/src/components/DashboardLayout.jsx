@@ -1,9 +1,9 @@
 import { Outlet, NavLink, Link } from "react-router-dom";
-import { useWallet } from "../context/WalletContext";
-import { Shield, Home, ListChecks, AlertTriangle, PlayCircle, LogOut } from "lucide-react";
+import { useWallet } from "@/context/WalletContext";
+import { Shield, Home, ListChecks, AlertTriangle, PlayCircle, FlaskConical, LogOut, PlugZap, UserCircle2 } from "lucide-react";
 
 export default function DashboardLayout() {
-  const { address, initialize, disconnectWallet, isConnected, isConnecting, connectWallet } = useWallet();
+  const { address, disconnectWallet, isConnected, isConnecting, connectWallet } = useWallet();
 
   const truncateAddress = (addr) => {
     if (!addr) return "";
@@ -20,7 +20,7 @@ export default function DashboardLayout() {
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-tight text-white">GuardRail</p>
+              <p className="text-sm font-semibold tracking-tight text-white">Covenant</p>
               <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Dashboard</p>
             </div>
           </Link>
@@ -29,8 +29,11 @@ export default function DashboardLayout() {
             {[
               { path: "/app", icon: Home, label: "Overview", exact: true },
               { path: "/app/policies", icon: ListChecks, label: "Policies" },
+              { path: "/app/studio", icon: FlaskConical, label: "Agent Studio" },
               { path: "/app/threats", icon: AlertTriangle, label: "Threat Logs" },
               { path: "/app/demo", icon: PlayCircle, label: "Live Demo" },
+              { path: "/app/integrations", icon: PlugZap, label: "Integrations" },
+              { path: "/app/account", icon: UserCircle2, label: "Account" },
             ].map((item) => (
               <NavLink
                 key={item.path}
@@ -82,7 +85,7 @@ export default function DashboardLayout() {
       <main className="ml-64 flex-1">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/8 bg-black/50 px-8 backdrop-blur-xl">
           <p className="text-sm font-medium text-zinc-400">
-            GuardRail Protocol Workspace
+            Covenant Protocol Workspace
           </p>
           <div className="flex items-center gap-4">
             {isConnected ? (

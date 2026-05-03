@@ -1,11 +1,15 @@
 {
-  "name": "guardrail-monorepo",
+  "name": "covenant-monorepo",
   "private": true,
   "scripts": {
     "build": "npm --prefix client run build && npm --prefix contracts run compile && npm --prefix contracts run test",
+    "validate": "npm --prefix client run lint && npm --prefix client run build && npm --prefix server run smoke",
     "client:build": "npm --prefix client run build",
     "contracts:compile": "npm --prefix contracts run compile",
     "contracts:test": "npm --prefix contracts run test",
-    "server:start": "npm --prefix server start"
+    "server:start": "npm --prefix server start",
+    "sdk:check": "npm --prefix packages/sdk-ts run check",
+    "compose:up": "docker compose up --build -d",
+    "compose:down": "docker compose down"
   }
 }

@@ -1,16 +1,28 @@
-# React + Vite
+# Covenant UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React (Vite) dashboard for Covenant: policies, integrations, threats, audit view, and live API-backed metrics.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+cp .env.example .env.local   # edit VITE_* vars — see ENVIRONMENT.md
+npm run dev
+```
 
-## React Compiler
+## Environment
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+| Variable | Notes |
+|----------|--------|
+| `VITE_API_URL` | API origin. **`""` empty string** → same-origin `/api/*` for Docker/nginx. Omit or set to `http://localhost:3000` for local API. |
+| `VITE_COVENANT_API_KEY` | Mirrors server `COVENANT_API_KEY` when reads are locked down; avoid exposing in public production sites. |
 
-## Expanding the ESLint configuration
+Full stack variables and security model: **[`../ENVIRONMENT.md`](../ENVIRONMENT.md)**.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production bundle |
+| `npm run lint` | ESLint |

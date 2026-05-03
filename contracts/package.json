@@ -1,5 +1,5 @@
 {
-  "name": "guardrail-contracts",
+  "name": "covenant-contracts",
   "private": true,
   "scripts": {
     "compile": "hardhat compile",

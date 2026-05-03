@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, CircleOff, Network, Server, Wallet } from "lucide-react";
-import { getApiBaseUrl, getApiConfig, getAxlBaseUrl, getAxlTopology } from "@/lib/api";
+import { getApiBaseUrl, getApiConfig, getAxlDisplayUrl, getAxlTopology, probeUniswapTrading } from "@/lib/api";
 
 function StatusPill({ ok, label }) {
   return (
@@ -14,21 +14,44 @@ function StatusPill({ ok, label }) {
 export default function IntegrationsPage() {
   const [config, setConfig] = useState(null);
   const [topology, setTopology] = useState(null);
-  const [error, setError] = useState("");
+  const [axlError, setAxlError] = useState("");
+  const [uniswapProbe, setUniswapProbe] = useState(null);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const [apiConfig, axl] = await Promise.all([getApiConfig(), getAxlTopology()]);
+        const apiConfig = await getApiConfig();
         if (!cancelled) {
           setConfig(apiConfig);
-          setTopology(axl);
         }
-      } catch (loadError) {
+        try {
+          const axl = await getAxlTopology();
+          if (!cancelled) {
+            setTopology(axl);
+            setAxlError("");
+          }
+        } catch (axlErr) {
+          if (!cancelled) {
+            setTopology(null);
+            setAxlError(axlErr.message || "AXL unreachable");
+          }
+        }
+        try {
+          const probe = await probeUniswapTrading();
+          if (!cancelled) {
+            setUniswapProbe(probe);
+          }
+        } catch {
+          if (!cancelled) {
+            setUniswapProbe(null);
+          }
+        }
+      } catch (err) {
         if (!cancelled) {
-          setError(loadError.message || "Failed to load integrations.");
+          setLoadError(err.message || "Failed to load integrations.");
         }
       }
     }
@@ -41,43 +64,51 @@ export default function IntegrationsPage() {
   }, []);
 
   return (
-    <section className="space-y-5 py-4">
-      <header className="guardrail-panel p-6 md:p-8">
+    <section className="relative z-10 space-y-5 py-4 text-white">
+      <header className="covenant-panel p-6 md:p-8">
         <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Integrations</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Protocol connectivity matrix</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-          Live integration health for backend config and AXL network identity, with direct environment-driven URLs.
+          AXL topology and Uniswap Trading API checks go through Covenant’s API proxy (keys stay on the server). 0G Storage uploads run from the backend after ALLOW when indexer + RPC + signer env are set.
         </p>
       </header>
 
-      {error ? <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div> : null}
+      {loadError ? <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{loadError}</div> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="guardrail-panel p-6 space-y-4">
+        <article className="covenant-panel p-6 space-y-4">
           <div className="inline-flex items-center gap-2 text-zinc-300">
             <Server className="h-4 w-4" />
-            <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">GuardRail API</p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Covenant API</p>
           </div>
 
           <p className="text-sm text-zinc-400">Base URL: {getApiBaseUrl()}</p>
 
           <div className="flex flex-wrap gap-2">
             <StatusPill ok={Boolean(config?.integrations?.keeperHubConfigured)} label="KeeperHub" />
-            <StatusPill ok={Boolean(config?.integrations?.uniswapConfigured)} label="Uniswap" />
-            <StatusPill ok={Boolean(config?.integrations?.zeroGConfigured)} label="0G" />
-            <StatusPill ok={Boolean(config?.integrations?.guardrailRegistryAddress)} label="Registry" />
+            <StatusPill ok={Boolean(config?.integrations?.uniswapConfigured)} label="Uniswap API key" />
+            <StatusPill ok={Boolean(uniswapProbe?.ok)} label="Uniswap Gateway probe" />
+            <StatusPill ok={Boolean(config?.integrations?.zeroGConfigured)} label="0G signals" />
+            <StatusPill ok={Boolean(config?.integrations?.zeroGStorageReady)} label="0G Storage SDK" />
+            <StatusPill ok={Boolean(config?.integrations?.covenantRegistryAddress)} label="Registry" />
           </div>
 
-          <p className="text-xs text-zinc-500">Registry address: {config?.integrations?.guardrailRegistryAddress || "not set"}</p>
+          <p className="text-xs text-zinc-500 leading-6">
+            Uniswap Trading API:{" "}
+            <span className="text-zinc-400">{config?.integrations?.uniswapTradingBase || "—"}</span>
+          </p>
+          <p className="text-xs text-zinc-500">Registry address: {config?.integrations?.covenantRegistryAddress || "not set"}</p>
         </article>
 
-        <article className="guardrail-panel p-6 space-y-4">
+        <article className="covenant-panel p-6 space-y-4">
           <div className="inline-flex items-center gap-2 text-zinc-300">
             <Network className="h-4 w-4" />
             <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Gensyn AXL</p>
           </div>
 
-          <p className="text-sm text-zinc-400">AXL URL: {getAxlBaseUrl()}</p>
+          <p className="text-sm text-zinc-400">
+            Configured node URL: {getAxlDisplayUrl(config) || "(set GENSYN_AXL_URL on the server)"} — live topology via Covenant proxy
+          </p>
 
           {topology ? (
             <div className="space-y-2 text-sm text-zinc-300">
@@ -86,7 +117,7 @@ export default function IntegrationsPage() {
               <p>Peers discovered: {(topology.peers || []).length}</p>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">Topology not reachable yet.</p>
+            <p className="text-sm text-rose-200/90">{axlError || "Topology not loaded."}</p>
           )}
         </article>
       </div>

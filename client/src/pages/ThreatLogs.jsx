@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
-import { useWallet } from "../context/WalletContext";
-import { fetchEvents } from "../lib/api";
-import { AlertTriangle, Clock, TerminalSquare, AlertCircle, RefreshCw } from "lucide-react";
+import { useWallet } from "@/context/WalletContext";
+import { fetchEvents, fetchAudit } from "@/lib/api";
+import { AlertTriangle, Clock, TerminalSquare, AlertCircle, RefreshCw, Hash } from "lucide-react";
 
 export default function ThreatLogs() {
   const { isConnected } = useWallet();
   const [events, setEvents] = useState([]);
+  const [decisions, setDecisions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     try {
-      const data = await fetchEvents();
+      const [data, audit] = await Promise.all([fetchEvents(), fetchAudit()]);
       setEvents(data.events || []);
+      setDecisions((audit.decisions || []).slice(0, 24));
     } catch (err) {
       console.error(err);
     } finally {
@@ -41,7 +43,7 @@ export default function ThreatLogs() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Violation & Event Logs</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Every transaction checked by GuardRail is logged here. Blocked attempts are highlighted in red.
+            Every transaction checked by Covenant is logged here. Blocked attempts are highlighted in red.
           </p>
         </div>
         <button
@@ -54,7 +56,7 @@ export default function ThreatLogs() {
       </div>
 
       {loading && events.length === 0 ? (
-        <div className="text-zinc-500 text-sm animate-pulse py-12 text-center">Loading events from GuardRail API...</div>
+        <div className="text-zinc-500 text-sm animate-pulse py-12 text-center">Loading events from Covenant API...</div>
       ) : events.length === 0 ? (
         <div className="rounded-2xl border border-white/8 bg-black/35 p-6 flex flex-col items-center justify-center py-20 text-center">
           <AlertTriangle className="h-10 w-10 text-zinc-600 mb-4" />
@@ -62,7 +64,31 @@ export default function ThreatLogs() {
           <p className="text-xs text-zinc-500">Run the Live Demo simulation to generate threat events.</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-white/8 bg-black/35 p-5">
+            <h2 className="text-base font-semibold text-white">Forensics Timeline</h2>
+            <p className="mt-1 text-xs text-zinc-500">Hash-chained decisions for replay and auditing.</p>
+            <div className="mt-4 space-y-3 max-h-[320px] overflow-y-auto">
+              {decisions.map((decision) => (
+                <div key={decision.entryHash} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                  <div className="flex items-center justify-between gap-2 text-xs text-zinc-400">
+                    <span>{decision.agentId}</span>
+                    <span>{new Date(decision.timestamp).toLocaleString()}</span>
+                  </div>
+                  <p className={`mt-2 text-sm font-semibold ${decision.allowed ? "text-emerald-300" : "text-rose-300"}`}>
+                    {decision.allowed ? "ALLOWED" : "BLOCKED"} · {decision.reason}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-400">Rule {decision.ruleId} · Policy {decision.policyId} v{decision.policyVersion}</p>
+                  <div className="mt-2 flex items-center gap-2 text-[11px] text-zinc-500">
+                    <Hash className="h-3 w-3" />
+                    <span>{decision.entryHash?.slice(0, 18)}... (prev {decision.prevHash?.slice(0, 10) || "root"})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="grid gap-4">
           {events.map((event, idx) => {
             const isBlock = event.type === "BLOCK";
             const isAllow = event.type === "ALLOW";
@@ -107,6 +133,7 @@ export default function ThreatLogs() {
               </div>
             );
           })}
+          </div>
         </div>
       )}
     </div>

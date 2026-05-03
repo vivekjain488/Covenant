@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useWallet } from "../context/WalletContext";
-import { fetchPolicies, createPolicy } from "../lib/api";
-import { Plus, CheckCircle2, Shield, Trash2, ArrowRight, XCircle, Loader2 } from "lucide-react";
+import { useWallet } from "@/context/WalletContext";
+import { fetchPolicies, createPolicy, compilePolicy, fetchPolicyVersions, rollbackPolicy } from "../lib/api";
+import { Plus, CheckCircle2, Shield, Trash2, XCircle, Loader2, Sparkles, RotateCcw } from "lucide-react";
 
 export default function Policies() {
   const { isConnected, address, workspace, updateWorkspace } = useWallet();
@@ -12,6 +12,9 @@ export default function Policies() {
   const [windowHours, setWindowHours] = useState("24");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [compilerInput, setCompilerInput] = useState("");
+  const [compiledMessage, setCompiledMessage] = useState("");
+  const [versionsByPolicy, setVersionsByPolicy] = useState({});
 
   useEffect(() => {
     loadPolicies();
@@ -25,6 +28,15 @@ export default function Policies() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadVersions = async (policyId) => {
+    try {
+      const data = await fetchPolicyVersions(policyId);
+      setVersionsByPolicy((current) => ({ ...current, [policyId]: data.versions || [] }));
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -83,6 +95,36 @@ export default function Policies() {
       ...draft,
       personalPolicies: draft.personalPolicies.filter((p) => p.id !== id),
     }));
+  };
+
+  const handleCompilePolicy = async () => {
+    if (!compilerInput.trim()) return;
+    setSubmitting(true);
+    setCompiledMessage("");
+    try {
+      const result = await compilePolicy(compilerInput, address || "0xCovenantAdmin");
+      setCompiledMessage(`Compiled and saved as ${result.policy.id} v${result.policy.version}`);
+      setCompilerInput("");
+      await loadPolicies();
+      await loadVersions(result.policy.id);
+    } catch (err) {
+      setCompiledMessage(err.message || "Compilation failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRollback = async (policyId, version) => {
+    setSubmitting(true);
+    try {
+      await rollbackPolicy(policyId, version);
+      await loadPolicies();
+      await loadVersions(policyId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const localPolicies = workspace?.personalPolicies || [];
@@ -162,8 +204,34 @@ export default function Policies() {
         </div>
       )}
 
+      <div className="mb-8 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-6">
+        <div className="mb-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-cyan-300" />
+          <h2 className="text-lg font-medium text-cyan-200">Natural Language Policy Compiler</h2>
+        </div>
+        <p className="mb-4 text-sm text-zinc-300">
+          Write policy intent in plain English. Covenant compiles it into a typed runtime policy with deterministic defaults.
+        </p>
+        <textarea
+          value={compilerInput}
+          onChange={(e) => setCompilerInput(e.target.value)}
+          placeholder="Example: This agent can spend up to 1 ETH per day on Uniswap for ETH/USDC only, never between 2-6 UTC, block new contracts under 30 days."
+          className="min-h-[120px] w-full rounded-xl border border-cyan-500/20 bg-black/50 px-4 py-3 text-sm outline-none focus:border-cyan-500/50"
+        />
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={handleCompilePolicy}
+            disabled={submitting}
+            className="rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-cyan-300 disabled:opacity-50"
+          >
+            Compile + Save
+          </button>
+          {compiledMessage ? <p className="text-sm text-zinc-300">{compiledMessage}</p> : null}
+        </div>
+      </div>
+
       {loading ? (
-        <div className="text-zinc-500 text-sm animate-pulse py-12 text-center">Loading policies from GuardRail API...</div>
+        <div className="text-zinc-500 text-sm animate-pulse py-12 text-center">Loading policies from Covenant API...</div>
       ) : allPolicies.length === 0 ? (
         <div className="rounded-2xl border border-white/8 bg-black/35 flex flex-col items-center justify-center py-20 text-center">
           <Shield className="h-10 w-10 text-zinc-600 mb-4" />
@@ -211,6 +279,31 @@ export default function Policies() {
                       {tag}
                     </span>
                   ))}
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => loadVersions(policy.id)}
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/10"
+                  >
+                    Load Versions
+                  </button>
+                  {(versionsByPolicy[policy.id] || []).length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {versionsByPolicy[policy.id].slice(0, 3).map((versionEntry) => (
+                        <div key={`${policy.id}-${versionEntry.version}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-300">
+                          <span>v{versionEntry.version} · {new Date(versionEntry.timestamp).toLocaleString()}</span>
+                          <button
+                            onClick={() => handleRollback(policy.id, versionEntry.version)}
+                            disabled={submitting}
+                            className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-300 hover:bg-amber-500/20"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Rollback
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="flex items-center gap-3 self-end sm:self-auto">

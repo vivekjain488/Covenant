@@ -1,0 +1,44 @@
+[
+  {
+    "id": "conservative-agent",
+    "name": "Conservative Agent Policy",
+    "owner": "0xCovenantAdmin",
+    "enabled": true,
+    "tags": ["keeperhub", "0g", "ens"],
+    "constraints": {
+      "spendLimitWei": "1000000000000000000",
+      "windowSeconds": 3600,
+      "allowedActions": ["swap", "transfer"],
+      "allowedProtocols": ["uniswap"],
+      "allowedPairs": ["ETH/USDC"],
+      "denyNewAddresses": false,
+      "denyFreshContractsDays": 30,
+      "activeHoursUtc": null,
+      "challengeThresholdWei": "500000000000000000"
+    },
+    "version": 1,
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "updatedAt": "1970-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "moderate-agent",
+    "name": "Moderate Agent Policy",
+    "owner": "0xCovenantAdmin",
+    "enabled": true,
+    "tags": ["keeperhub", "uniswap"],
+    "constraints": {
+      "spendLimitWei": "3000000000000000000",
+      "windowSeconds": 3600,
+      "allowedActions": ["swap", "transfer"],
+      "allowedProtocols": ["uniswap"],
+      "allowedPairs": [],
+      "denyNewAddresses": false,
+      "denyFreshContractsDays": 0,
+      "activeHoursUtc": null,
+      "challengeThresholdWei": "1000000000000000000"
+    },
+    "version": 1,
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "updatedAt": "1970-01-01T00:00:00.000Z"
+  }
+]

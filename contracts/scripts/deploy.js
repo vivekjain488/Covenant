@@ -8,12 +8,12 @@ async function main() {
     console.log("Deploying with:", deployer.address);
     console.log("Network:", hre.network.name);
 
-    console.log("\nDeploying GuardRailRegistry...");
+    console.log("\nDeploying Covenant Registry...");
     const Registry = await hre.ethers.getContractFactory("GuardRailRegistry");
     const registry = await Registry.deploy(deployer.address);
     await registry.waitForDeployment();
     const registryAddress = await registry.getAddress();
-    console.log("GuardRailRegistry deployed to:", registryAddress);
+    console.log("Covenant Registry deployed to:", registryAddress);
 
     // Save deployment info
     const deploymentInfo = {
@@ -21,7 +21,7 @@ async function main() {
       deployer: deployer.address,
       deploymentTime: new Date().toISOString(),
       contracts: {
-        guardRailRegistry: {
+        covenantRegistry: {
           address: registryAddress,
           admin: deployer.address
         }
@@ -32,7 +32,7 @@ async function main() {
     console.log("\nSaved deployment info to:", deploymentPath);
 
     console.log("\nDone.");
-    console.log("GuardRailRegistry:", registryAddress);
+    console.log("Covenant Registry:", registryAddress);
   } catch (error) {
     console.error("Deployment failed:", error);
     process.exit(1);

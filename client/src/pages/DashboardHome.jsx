@@ -1,22 +1,27 @@
 import { useState, useEffect } from "react";
-import { useWallet } from "../context/WalletContext";
-import { fetchState, fetchEvents } from "../lib/api";
-import { Shield, Activity, TrendingUp, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { useWallet } from "@/context/WalletContext";
+import { fetchState, fetchEvents, fetchApiConfig, fetchAgentScore } from "@/lib/api";
+import { Shield, Activity, TrendingUp, AlertTriangle, Clock, Gauge } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function DashboardHome() {
   const { isConnected, address, connectWallet } = useWallet();
   const [state, setState] = useState(null);
   const [events, setEvents] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [score, setScore] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let interval;
     const load = async () => {
       try {
-        const [s, e] = await Promise.all([fetchState(), fetchEvents()]);
+        const activeAgentId = address ? `${address.slice(0, 10)}.agent` : "default-agent";
+        const [s, e, c, sc] = await Promise.all([fetchState(), fetchEvents(), fetchApiConfig(), fetchAgentScore(activeAgentId)]);
         setState(s);
         setEvents(e.events || []);
+        setConfig(c);
+        setScore(sc);
       } catch (err) {
         console.error(err);
       } finally {
@@ -26,7 +31,7 @@ export default function DashboardHome() {
     load();
     interval = setInterval(load, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [address]);
 
   if (!isConnected) {
     return (
@@ -34,9 +39,9 @@ export default function DashboardHome() {
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
           <Shield className="h-9 w-9 text-white" />
         </div>
-        <h2 className="text-3xl font-semibold tracking-tight text-white mb-3">Welcome to GuardRail</h2>
+        <h2 className="text-3xl font-semibold tracking-tight text-white mb-3">Welcome to Covenant</h2>
         <p className="text-zinc-400 mb-8 leading-7">
-          GuardRail protects your AI agents from unauthorized transactions, prompt injection attacks, and overspending.
+          Covenant protects your AI agents from unauthorized transactions, prompt injection attacks, and policy violations.
           Connect your wallet to start defining firewall policies for your autonomous agents.
         </p>
 
@@ -74,14 +79,14 @@ export default function DashboardHome() {
     <div className="relative z-10">
       <div className="mb-8">
         <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">Overview</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your GuardRail Workspace</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your Covenant Workspace</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          Real-time metrics from your running GuardRail firewall instance.
+          Real-time metrics from your running Covenant policy engine.
         </p>
       </div>
 
       {loading ? (
-        <div className="text-zinc-500 text-sm animate-pulse">Loading live data from GuardRail API...</div>
+        <div className="text-zinc-500 text-sm animate-pulse">Loading live data from Covenant API...</div>
       ) : (
         <>
           <div className="grid gap-5 md:grid-cols-4 mb-8">
@@ -164,6 +169,48 @@ export default function DashboardHome() {
                 {events.length === 0 && (
                   <p className="text-sm text-zinc-500 text-center py-8">No events yet. Run a simulation to generate activity.</p>
                 )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-3xl border border-white/8 bg-black/35 p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">Covenant Score</h2>
+                <Gauge className="h-4 w-4 text-zinc-400" />
+              </div>
+              <p className="mt-2 text-sm text-zinc-400">Reputation updates after every allow/block decision.</p>
+              <div className="mt-6 flex items-end gap-3">
+                <p className="text-5xl font-bold tracking-tight text-white">{score?.score ?? 500}</p>
+                <p className="pb-2 text-xs uppercase tracking-wider text-zinc-400">out of 1000</p>
+              </div>
+              <div className="mt-4 grid gap-2 text-sm text-zinc-300">
+                <p>Checks: {score?.checks ?? 0}</p>
+                <p>Blocked: {score?.blocked ?? 0}</p>
+                <p>Last update: {score?.lastUpdated ? new Date(score.lastUpdated).toLocaleString() : "N/A"}</p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/8 bg-black/35 p-6">
+              <h2 className="text-lg font-semibold text-white">Integration Readiness</h2>
+              <p className="mt-2 text-sm text-zinc-400">Live status from backend config, no fake sponsor states.</p>
+              <div className="mt-5 grid gap-2 text-sm text-zinc-300">
+                <p>
+                  API auth:{" "}
+                  {config?.auth?.apiKeyConfigured
+                    ? `enabled (${config?.auth?.publicReadEnabled !== false ? "public GET reads" : "all routes locked"})`
+                    : "disabled (dev-open)"}
+                </p>
+                <p>KeeperHub key: {config?.integrations?.keeperHubConfigured ? "set" : "missing"}</p>
+                <p>KeeperHub webhook: {config?.integrations?.keeperHubWebhookConfigured ? "set" : "off"}</p>
+                <p>Uniswap key: {config?.integrations?.uniswapConfigured ? "set" : "missing"}</p>
+                <p>Uniswap Gateway: {config?.integrations?.uniswapTradingBase || "—"}</p>
+                <p>Uniswap notify URL: {config?.integrations?.uniswapNotifyConfigured ? "set" : "off"}</p>
+                <p>0G signals: {config?.integrations?.zeroGConfigured ? "set" : "off"}</p>
+                <p>0G Storage SDK (audit upload): {config?.integrations?.zeroGStorageReady ? "ready" : "off"}</p>
+                <p>0G audit webhook: {config?.integrations?.zeroGAuditWebhookConfigured ? "set" : "off"}</p>
+                <p>Gensyn AXL URL: {config?.integrations?.gensynAxlUrl || "-"}</p>
+                <p>Registry Address: {config?.integrations?.covenantRegistryAddress || "Not set"}</p>
               </div>
             </div>
           </div>

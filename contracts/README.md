@@ -1,13 +1,24 @@
-# Sample Hardhat Project
+# Covenant contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+Hardhat project for **GuardRailRegistry** and related deploy scripts.
 
-Try running some of the following tasks:
+## Setup
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
+```bash
+npm install
+cp .env.example .env   # PRIVATE_KEY, RPC URLs, etc.
 ```
+
+## Common tasks
+
+```bash
+npx hardhat compile
+npx hardhat test
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+After deploy, set **`GUARDRAIL_REGISTRY_ADDRESS`** on the Covenant server (see **[`../ENVIRONMENT.md`](../ENVIRONMENT.md)**).
+
+## Ignored artifacts
+
+`artifacts/`, `cache/`, `coverage/`, and local `.env` are gitignored; **`.env.example` stays tracked** as the template.

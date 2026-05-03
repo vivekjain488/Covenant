@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { BrowserProvider } from "ethers";
 
 const WalletContext = createContext(null);
 
@@ -13,7 +12,7 @@ const DEFAULT_WORKSPACE = {
 };
 
 function workspaceKey(address) {
-  return `guardrail.workspace.${address.toLowerCase()}`;
+  return `covenant.workspace.${address.toLowerCase()}`;
 }
 
 function readWorkspace(address) {

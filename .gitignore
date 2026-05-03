@@ -1,7 +1,34 @@
+# --- Local clones / scratch (optional dev dependencies) ---
 0g-storage-node/
 axl/
 prompt.json
+
+# --- Secrets (committed templates use *.env.example only) ---
 .env
 .env.local
-.env.example
 .env.prod
+.env.*.local
+
+# --- Dependencies & build output ---
+node_modules/
+dist/
+build/
+coverage/
+.parcel-cache/
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# --- Logs & OS cruft ---
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# --- Covenant API runtime persistence (never commit tenant/decision state) ---
+/server/data/
+
+# IDE (keep shared VS Code recommendations if you add them later)
+.idea/
+*.swp
+*.swo

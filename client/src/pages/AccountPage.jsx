@@ -39,8 +39,8 @@ export default function AccountPage() {
   }
 
   return (
-    <section className="space-y-5 py-4">
-      <header className="guardrail-panel p-6 md:p-8">
+    <section className="relative z-10 space-y-5 py-4 text-white">
+      <header className="covenant-panel p-6 md:p-8">
         <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Account</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Personal isolated workspace</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
@@ -49,7 +49,7 @@ export default function AccountPage() {
       </header>
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <form onSubmit={saveProfile} className="guardrail-panel p-6 space-y-4">
+        <form onSubmit={saveProfile} className="covenant-panel p-6 space-y-4">
           <div className="inline-flex items-center gap-2 text-zinc-300">
             <User className="h-4 w-4" />
             <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Profile settings</p>
@@ -64,7 +64,7 @@ export default function AccountPage() {
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
               className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm outline-none focus:border-white/20"
-              placeholder="My GuardRail Agent"
+              placeholder="My Covenant Agent"
             />
           </label>
 
@@ -91,7 +91,7 @@ export default function AccountPage() {
           {message ? <p className="text-sm text-zinc-400">{message}</p> : null}
         </form>
 
-        <div className="guardrail-panel p-6">
+        <div className="covenant-panel p-6">
           <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Workspace summary</p>
           <div className="mt-4 space-y-2 text-sm text-zinc-300">
             <p>Nickname: {workspace.profile.nickname || "(none)"}</p>
