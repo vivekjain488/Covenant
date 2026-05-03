@@ -83,7 +83,7 @@ func applyOverrides(base *ApiConfig, ov ApiConfig) {
 	}
 	// Let environment variable override the ApiPort for Render compatibility
 	if envPort := os.Getenv("PORT"); envPort != "" {
-		if fmt.Sscanf(envPort, "%d", &base.ApiPort) == 0 {
+		if _, err := fmt.Sscanf(envPort, "%d", &base.ApiPort); err != nil {
 			// fallback if scan fails
 		}
 	}
